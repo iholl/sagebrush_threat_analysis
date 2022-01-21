@@ -7,13 +7,13 @@ def create_folder(folder_name):
 
 def extract_bands(multiband_raster):
     dataset = rasterio.open("data/{}".format(multiband_raster)) 
-    
+    # loop through bands in list and extract them to individual rasters
     for band in band_list:  
         source_band = dataset.read(band)
-
+        # create a folder for each band if one does not exist
         folder_name = "band_{}".format(band)
         create_folder(folder_name)
-        
+        # write each require band from each year to the designated folder
         with rasterio.open(
             "{}/{}".format(folder_name, multiband_raster),
             "w",

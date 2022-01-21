@@ -1,5 +1,11 @@
 data
+
 band_1
 band_4
 band_5
 band_6
+
+band_1_mean_raster.tif
+band_4_mean_raster.tif
+band_5_mean_raster.tif
+band_6_mean_raster.tif
