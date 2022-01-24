@@ -3,21 +3,12 @@ import rasterio
 from osgeo import gdal
 import numpy as np
 
-def unique(data_array):
-    x = np.array(data_array)
-    print(np.unique(x))
-
-def frequency(raster):
-    (unique, counts) = np.unique(raster, return_counts=True)
-    frequencies = np.asarray((unique, counts)).T
-    print(frequencies)
-
-raster_list = sorted(glob("*.tif"))
-
+raster_list = sorted(glob("*raster.tif"))
+print(raster_list)
 with rasterio.open(raster_list[0]) as src:
     meta = src.meta
 
-annuals = gdal.Open(raster_list[1])
+annuals = gdal.Open(raster_list[0])
 annuals_array = np.array(annuals.GetRasterBand(1).ReadAsArray())
 
 perennials = gdal.Open(raster_list[1])
@@ -34,15 +25,40 @@ def create_raster(raster, name):
         output_raster.write(raster, 1)
         output_raster.close()
 
-# RULESETS
-
-# TREE STEP 1: IF Tree >=21%  E: Late juniper (trees highcover)
-high_trees = np.where(tree_array >= 21, 1, 0)
-create_raster(high_trees, "high_trees")
-unique(high_trees)
-frequency(high_trees)
-
-# TREE STEP 2: IF 5% <= Tree > 21% AND IF AFG:PFG ratio >=1.0 (trees low-mid cover/annuals dominant) (Value=9)
 annuals_to_perennials = np.divide(annuals_array, perennials_array, out=np.zeros(annuals_array.shape, dtype=float), where=perennials_array!=0)
-high_annuals = np.where(annuals_to_perennials >= 1, 1, 0)
-create_raster(high_annuals, "high_annauls")
+
+# RULESETS
+# TREE STEP 1: IF TREE >=21%  E: Late juniper (trees highcover)
+high_tree_cover = np.where(tree_array >= 21, 1, 0)
+create_raster(high_tree_cover, "high_tree_cover")
+
+mod_tree_cover = np.where(((tree_array < 21) & (tree_array >= 5)), 1, 0)
+create_raster(mod_tree_cover, "mod_tree_cover")
+
+dominant_ann = np.where(annuals_to_perennials >= 1, 1, 0)
+create_raster(dominant_ann, "dominant_ann")
+
+# TREE STEP 2: IF 5% <= TREE > 21% AND IF AFG:PFG ratio >=1.0 (trees low-mid cover/annuals dominant)
+moderate_trees_annuals_dominant = np.where(((dominant_ann > 0) & (mod_tree_cover  > 0)), 1, 0)
+create_raster(moderate_trees_annuals_dominant, "moderate_trees_annuals_dominant")
+
+sdominant_per = np.where(((annuals_to_perennials < 1) & (annuals_to_perennials >= 0.5)), 1, 0)
+create_raster(sdominant_per, "sdominant_per")
+
+# TREE STEP 3: IF 5% <= TREE > 21% AND IF  0.5 <= AFG:PFG ratio < 1.0 (trees low-mid cover/perennials slightly dominant)
+moderate_trees_perennials_sdominant = np.where(((sdominant_per > 0) & (mod_tree_cover > 0)), 1, 0)
+create_raster(moderate_trees_perennials_sdominant, "moderate_trees_perennials_sdominant")
+
+dominant_per = np.where(((annuals_to_perennials < 0.5) & (annuals_to_perennials >= 0.333)), 1, 0)
+create_raster(dominant_per, "dominant_per")
+
+# TREE STEP 4: IF 5% <= TREE > 21% AND IF  0.333 <= AFG:PFG ratio < 0.5 (trees low-mid cover/perennials dominant)
+moderate_trees_perennials_dominant = np.where(((dominant_per > 0) & (mod_tree_cover > 0)), 1, 0)
+create_raster(moderate_trees_perennials_dominant, "moderate_trees_perennials_dominant")
+
+vdominant_per = np.where(((annuals_to_perennials < 0.333)), 1, 0)
+create_raster(vdominant_per, "vdominant_per")
+
+# TREE STEP 5: IF 5% <= TREE > 21% AND IF 0.333 > AFG:PFG ratio (trees low-mid cover/perennials very dominant)
+moderate_trees_perennials_vdominant = np.where(((vdominant_per > 0) & (mod_tree_cover > 0)), 1, 0)
+create_raster(moderate_trees_perennials_vdominant, "moderate_trees_perennials_vdominant")
