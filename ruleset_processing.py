@@ -15,7 +15,7 @@ perennials = gdal.Open(raster_list[1])
 perennials_array = np.array(perennials.GetRasterBand(1).ReadAsArray())
 
 shrubs = gdal.Open(raster_list[2])
-tree_array = np.array(shrubs.GetRasterBand(1).ReadAsArray())
+shrub_array = np.array(shrubs.GetRasterBand(1).ReadAsArray())
 
 trees = gdal.Open(raster_list[3])
 tree_array = np.array(trees.GetRasterBand(1).ReadAsArray())
@@ -52,3 +52,6 @@ create_raster(moderate_trees_perennials_dominant, "moderate_trees_perennials_dom
 vdominant_per = np.where(((annuals_to_perennials < 0.333)), 1, 0)
 moderate_trees_perennials_vdominant = np.where(((vdominant_per > 0) & (mod_tree_cover > 0)), 1, 0)
 create_raster(moderate_trees_perennials_vdominant, "moderate_trees_perennials_vdominant")
+
+# SHRUB STEP 1: IF SHRUB >= 10% AND IF AFG:PFG >= 1.0 (poor condition shrub/annuals dominant)
+high_shrub_cover = np.where((shrub_array >= 10), 1, 0)
