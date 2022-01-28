@@ -36,7 +36,6 @@ tree_array = np.array(trees.GetRasterBand(1).ReadAsArray())
 
 create_folder("working_data")
 
-# RULESETS
 # TREE STEP 1: IF TREE >=21%  E: Late juniper (trees highcover)
 high_tree_cover = np.where(tree_array >= 21, 13, 0)
 create_raster(high_tree_cover, "working_data/high_tree_cover")
@@ -76,10 +75,7 @@ dest, output_transform = merge([high_trees, mod_tree_ann_dom, mod_tree_per_sdom,
 with rasterio.open("working_data/high_tree_cover.tif") as src:
         out_meta = src.meta.copy()    
 
-out_meta.update({"driver": "GTiff",
-                 "height": dest.shape[1],
-                 "width": dest.shape[2],
-                 "transform": output_transform})
+out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
 
 with rasterio.open("working_data/trees_mosaic.tif", "w", **out_meta) as dest1:
         dest1.write(dest)
