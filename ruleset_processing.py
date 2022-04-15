@@ -42,6 +42,7 @@ create_raster(high_tree_cover, "working_data/high_tree_cover")
 
 annuals_to_perennials = np.divide(annuals_array, perennials_array, out=np.zeros(annuals_array.shape, dtype=float), where=perennials_array!=0)
 mod_tree_cover = np.where(((tree_array < 21) & (tree_array >= 5)), 1, 0)
+low_tree_cover = np.where((tree_array < 5), 1, 0)
 
 # TREE STEP 2: IF 5% <= TREE > 21% AND IF AFG:PFG ratio >=1.0 (trees low-mid cover/annuals dominant)
 dominant_ann = np.where(annuals_to_perennials >= 1, 1, 0)
@@ -78,4 +79,33 @@ with rasterio.open("working_data/high_tree_cover.tif") as src:
 out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
 
 with rasterio.open("working_data/trees_mosaic.tif", "w", **out_meta) as dest1:
+        dest1.write(dest)
+
+# SHRUB STEP 1: IF SHRUB >= 10% AND AFG:PFG < 0.333 AND TREE < 5% (good shrubland)
+high_shrub_cover = np.where(shrub_array >= 10, 1, 0)
+good_shrubland = np.where(((high_shrub_cover > 0) & (vdominant_per > 0) & (low_tree_cover > 0)), 1, 0)
+create_raster(good_shrubland, "working_data/good_shrubland")
+
+# SHRUB STEP 2: IF SHRUB >= 10% AND 0.333 <= AFG:PFG < 1 AND TREE < 5% (intermediate shrubland)
+intermediate_annauals_perennials = np.where(((annuals_to_perennials >= 0.333) & (annuals_to_perennials < 1)), 1, 0)
+intermediate_shrubland = np.where(((high_shrub_cover > 0 ) & (intermediate_annauals_perennials > 0) & (low_tree_cover > 0)), 2, 0)
+create_raster(intermediate_shrubland, "working_data/intermediate_shrubland")
+
+# SHRUB STEP 3: IF SHRUB >= 10% AND AFG:PFG >= 1 AND TREE < 5% (poor shrublands)
+poor_shrubland = np.where(((high_shrub_cover > 0) & (annuals_to_perennials >= 1) & (low_tree_cover > 0)), 3, 0)
+create_raster(poor_shrubland, "working_data/poor_shrubland")
+
+# Mosaic tree data into tree raster
+good_shurbs = rasterio.open("working_data/good_shrubland.tif")
+intermediate_shrubs = rasterio.open("working_data/intermediate_shrubland.tif")
+poor_shrubs = rasterio.open("working_data/poor_shrubland.tif")
+
+dest, output_transform = merge([good_shurbs, intermediate_shrubs, poor_shrubs])
+
+with rasterio.open("working_data/good_shrubland.tif") as src:
+        out_meta = src.meta.copy()    
+
+out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
+
+with rasterio.open("working_data/shrubs_mosaic.tif", "w", **out_meta) as dest1:
         dest1.write(dest)
