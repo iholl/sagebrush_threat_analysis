@@ -6,7 +6,7 @@ def create_folder(folder_name):
         os.mkdir(folder_name)
 
 # coordinates for bounding box to limit the extent of the data
-data_extent = [-120, 42, -118, 40]
+data_extent = [-120, 42, -119, 41]
 # date range for downloading annual data
 date_min = 2016
 date_max = 2020

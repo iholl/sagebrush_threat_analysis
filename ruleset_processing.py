@@ -1,6 +1,5 @@
 import os
 from glob import glob
-from matplotlib.pyplot import close
 import rasterio
 import rasterio.merge
 from osgeo import gdal
@@ -17,6 +16,27 @@ def create_folder(folder_name):
 
 def merge(list):
     return rasterio.merge.merge(list)
+
+def merge_raster(path_list, output_name):
+        merge_list = []
+
+        for raster in path_list:
+                data = rasterio.open(raster)
+                merge_list.append(data)
+        
+        dest, output_transform = merge(merge_list)
+
+        with rasterio.open(path_list[0]) as src:
+                out_meta = src.meta.copy()    
+
+        out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
+
+        with rasterio.open("working_data/{}_mosaic.tif".format(output_name), "w", **out_meta) as dest1:
+                dest1.write(dest)
+                dest1.close()
+        
+        for data in merge_list:
+                data.close()
 
 raster_list = sorted(glob("*raster.tif"))
 
@@ -66,27 +86,10 @@ moderate_trees_perennials_vdominant = np.where(((vdominant_per > 0) & (mod_tree_
 create_raster(moderate_trees_perennials_vdominant, "working_data/moderate_trees_perennials_vdominant")
 
 # Mosaic tree data into tree raster
-high_trees = rasterio.open("working_data/high_tree_cover.tif")
-mod_tree_ann_dom = rasterio.open("working_data/moderate_trees_annuals_dominant.tif")
-mod_tree_per_sdom = rasterio.open("working_data/moderate_trees_perennials_sdominant.tif")
-mod_tree_per_dom = rasterio.open("working_data/moderate_trees_perennials_dominant.tif")
-mod_tree_per_vdom = rasterio.open("working_data/moderate_trees_perennials_vdominant.tif")
-
-dest, output_transform = merge([high_trees, mod_tree_ann_dom, mod_tree_per_sdom, mod_tree_per_dom, mod_tree_per_vdom])
-
-with rasterio.open("working_data/high_tree_cover.tif") as src:
-        out_meta = src.meta.copy()    
-
-out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
-
-with rasterio.open("working_data/trees_mosaic.tif", "w", **out_meta) as dest1:
-        dest1.write(dest)
-
-high_trees.close()
-mod_tree_ann_dom.close()
-mod_tree_per_sdom.close()
-mod_tree_per_dom.close()
-mod_tree_per_vdom.close()
+raster_paths = ["working_data/high_tree_cover.tif", "working_data/moderate_trees_annuals_dominant.tif", "working_data/moderate_trees_perennials_sdominant.tif",
+"working_data/moderate_trees_perennials_dominant.tif", "working_data/moderate_trees_perennials_vdominant.tif"]
+output = "trees"
+merge_raster(raster_paths, output)
 
 # SHRUB STEP 1: IF SHRUB >= 10% AND AFG:PFG < 0.333 AND TREE < 5% (high shrub cover/perrenials dominant) (1)
 high_shrub_cover = np.where(shrub_array >= 10, 1, 0)
@@ -103,23 +106,9 @@ poor_shrubland = np.where(((high_shrub_cover > 0) & (annuals_to_perennials >= 1)
 create_raster(poor_shrubland, "working_data/poor_shrubland")
 
 # Mosaic shrubs data into tree raster
-good_shurbs = rasterio.open("working_data/good_shrubland.tif")
-intermediate_shrubs = rasterio.open("working_data/intermediate_shrubland.tif")
-poor_shrubs = rasterio.open("working_data/poor_shrubland.tif")
-
-dest, output_transform = merge([good_shurbs, intermediate_shrubs, poor_shrubs])
-
-with rasterio.open("working_data/good_shrubland.tif") as src:
-        out_meta = src.meta.copy()    
-
-out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
-
-with rasterio.open("working_data/shrubs_mosaic.tif", "w", **out_meta) as dest1:
-        dest1.write(dest)
-
-good_shurbs.close()
-intermediate_shrubs.close()
-poor_shrubs.close()
+raster_paths = ["working_data/good_shrubland.tif", "working_data/intermediate_shrubland.tif", "working_data/poor_shrubland.tif"]
+output = "shrubs"
+merge_raster(raster_paths, output)
 
 # GRASS STEP 1: IF SHRUB < 10% AND AFG:PFG < 0.333 (low shrub cover/perrenials dominant) (4)
 low_shrub_cover = np.where(shrub_array < 10, 1, 0)
@@ -135,39 +124,11 @@ poor_grassland = np.where(((low_shrub_cover > 0) & (annuals_to_perennials >= 1))
 create_raster(poor_grassland, "working_data/poor_grassland")
 
 # Mosaic grass data into tree raster
-good_grass = rasterio.open("working_data/good_grassland.tif")
-intermediate_grass = rasterio.open("working_data/intermediate_grassland.tif")
-poor_grass = rasterio.open("working_data/poor_grassland.tif")
-
-dest, output_transform = merge([good_grass, intermediate_grass, poor_grass])
-
-with rasterio.open("working_data/good_grassland.tif") as src:
-        out_meta = src.meta.copy()    
-
-out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
-
-with rasterio.open("working_data/grass_mosaic.tif", "w", **out_meta) as dest1:
-        dest1.write(dest)
-
-good_grass.close()
-intermediate_grass.close()
-poor_grass.close()
+raster_paths = ["working_data/good_grassland.tif", "working_data/intermediate_grassland.tif", "working_data/poor_grassland.tif"]
+output = "grass"
+merge_raster(raster_paths, output)
 
 # Mosaic all data into final raster
-tree_raster = rasterio.open("working_data/trees_mosaic.tif")
-shrub_raster = rasterio.open("working_data/shrubs_mosaic.tif")
-grass_raster = rasterio.open("working_data/grass_mosaic.tif")
-
-dest, output_transform = merge([tree_raster, shrub_raster, grass_raster])
-
-with rasterio.open("working_data/trees_mosaic.tif") as src:
-        out_meta = src.meta.copy()    
-
-out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
-
-with rasterio.open("working_data/complete_mosaic.tif", "w", **out_meta) as dest1:
-        dest1.write(dest)
-
-tree_raster.close()
-shrub_raster.close()
-grass_raster.close()
+raster_paths = ["working_data/trees_mosaic.tif", "working_data/shrubs_mosaic.tif", "working_data/grass_mosaic.tif"]
+output = "complete"
+merge_raster(raster_paths, output)
