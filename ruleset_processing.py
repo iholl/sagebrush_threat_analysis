@@ -1,5 +1,6 @@
 import os
 from glob import glob
+from matplotlib.pyplot import close
 import rasterio
 import rasterio.merge
 from osgeo import gdal
@@ -81,6 +82,12 @@ out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape
 with rasterio.open("working_data/trees_mosaic.tif", "w", **out_meta) as dest1:
         dest1.write(dest)
 
+high_trees.close()
+mod_tree_ann_dom.close()
+mod_tree_per_sdom.close()
+mod_tree_per_dom.close()
+mod_tree_per_vdom.close()
+
 # SHRUB STEP 1: IF SHRUB >= 10% AND AFG:PFG < 0.333 AND TREE < 5% (high shrub cover/perrenials dominant) (1)
 high_shrub_cover = np.where(shrub_array >= 10, 1, 0)
 good_shrubland = np.where(((high_shrub_cover > 0) & (vdominant_per > 0) & (low_tree_cover > 0)), 1, 0) 
@@ -110,6 +117,10 @@ out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape
 with rasterio.open("working_data/shrubs_mosaic.tif", "w", **out_meta) as dest1:
         dest1.write(dest)
 
+good_shurbs.close()
+intermediate_shrubs.close()
+poor_shrubs.close()
+
 # GRASS STEP 1: IF SHRUB < 10% AND AFG:PFG < 0.333 (low shrub cover/perrenials dominant) (4)
 low_shrub_cover = np.where(shrub_array < 10, 1, 0)
 good_grassland = np.where(((low_shrub_cover > 0) & (annuals_to_perennials < 0.333)), 4, 0)
@@ -138,6 +149,10 @@ out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape
 with rasterio.open("working_data/grass_mosaic.tif", "w", **out_meta) as dest1:
         dest1.write(dest)
 
+good_grass.close()
+intermediate_grass.close()
+poor_grass.close()
+
 # Mosaic all data into final raster
 tree_raster = rasterio.open("working_data/trees_mosaic.tif")
 shrub_raster = rasterio.open("working_data/shrubs_mosaic.tif")
@@ -152,3 +167,7 @@ out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape
 
 with rasterio.open("working_data/complete_mosaic.tif", "w", **out_meta) as dest1:
         dest1.write(dest)
+
+tree_raster.close()
+shrub_raster.close()
+grass_raster.close()

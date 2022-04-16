@@ -26,6 +26,7 @@ def extract_bands(multiband_raster):
             transform=dataset.transform,
         ) as dst:
             dst.write(source_band, 1)
+            dst.close()
     
 # list of bands to be extracted: annuals, perennials, shrubs and trees
 band_list = [1,4,5,6]
