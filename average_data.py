@@ -11,7 +11,7 @@ def average_rasters(raster_list):
         raster_layer = rasterio.open(raster_path)
         layer = raster_layer.read(1)
         input_rasters.append(layer)
-    # stack rastes based on input raster list and take the mean
+    # stack rasters based on input raster list and take the mean of the stack
     raster_stack = np.stack(input_rasters)
     mean_array = np.mean(raster_stack, axis=0)
     # write the mean raster to the base directory

@@ -21,7 +21,6 @@ raster_list = sorted(glob("*raster.tif"))
 
 with rasterio.open(raster_list[0]) as src:
     meta = src.meta
-    print(meta)
 
 annuals = gdal.Open(raster_list[0])
 annuals_array = np.array(annuals.GetRasterBand(1).ReadAsArray())
@@ -140,13 +139,13 @@ with rasterio.open("working_data/grass_mosaic.tif", "w", **out_meta) as dest1:
         dest1.write(dest)
 
 # Mosaic all data into final raster
-tree_raster = rasterio.open("working_data/tree_mosaic.tif")
-shrub_raster = rasterio.open("working_data/shrub_mosaic.tif")
+tree_raster = rasterio.open("working_data/trees_mosaic.tif")
+shrub_raster = rasterio.open("working_data/shrubs_mosaic.tif")
 grass_raster = rasterio.open("working_data/grass_mosaic.tif")
 
 dest, output_transform = merge([tree_raster, shrub_raster, grass_raster])
 
-with rasterio.open("working_data/tree_raster.tif") as src:
+with rasterio.open("working_data/trees_mosaic.tif") as src:
         out_meta = src.meta.copy()    
 
 out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
