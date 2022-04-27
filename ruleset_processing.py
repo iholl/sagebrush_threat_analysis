@@ -28,7 +28,8 @@ def merge_raster(path_list, output_name):
 
         with rasterio.open(path_list[0]) as src:
                 out_meta = src.meta.copy()    
-
+                src.close()
+                
         out_meta.update({"driver": "GTiff", "height": dest.shape[1], "width": dest.shape[2], "transform": output_transform})
 
         with rasterio.open("working_data/{}_mosaic.tif".format(output_name), "w", **out_meta) as dest1:
@@ -39,6 +40,8 @@ def merge_raster(path_list, output_name):
                 data.close()
 
 raster_list = sorted(glob("*raster.tif"))
+
+print(raster_list)
 
 with rasterio.open(raster_list[0]) as src:
     meta = src.meta
