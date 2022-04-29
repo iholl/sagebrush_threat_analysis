@@ -15,13 +15,13 @@ def extract_bands(multiband_raster):
         create_folder(folder_name)
         # write each require band from each year to the designated folder
         with rasterio.open(
-            "{}/{}".format(folder_name, multiband_raster),
+            "{}/{}_{}".format(folder_name, band, multiband_raster),
             "w",
             driver="GTiff",
             height=source_band.shape[0],
             width=source_band.shape[1],
             count=1,
-            dtype=source_band.dtype,
+            dtype=rasterio.uint8,
             crs=dataset.crs,
             transform=dataset.transform,
         ) as dst:

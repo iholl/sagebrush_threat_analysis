@@ -5,9 +5,10 @@ import rasterio.merge
 from osgeo import gdal
 import numpy as np
 
-def create_raster(raster, name):
+def create_raster(raster, name):        
+    data = raster.astype(rasterio.uint8)
     with rasterio.open("{}.tif".format(name), "w", **meta) as output_raster:
-        output_raster.write(raster, 1)
+        output_raster.write(data, 1)
         output_raster.close()
 
 def create_folder(folder_name):
@@ -39,7 +40,7 @@ def merge_raster(path_list, output_name):
         for data in merge_list:
                 data.close()
 
-raster_list = sorted(glob("*raster.tif"))
+raster_list = sorted(glob("*.tif"))
 
 print(raster_list)
 
